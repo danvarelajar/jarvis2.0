@@ -50,3 +50,6 @@ out/
 # Secrets (intentionally tracked for educational purposes, but normally should be ignored)
 # backend/sandbox/secret.txt
 # backend/sandbox/credentials.env
+
+# Documentation (markdown files)
+*.md

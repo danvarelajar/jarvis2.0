@@ -31,7 +31,9 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8000}
-      - NEXT_PUBLIC_OPIK_ENDPOINT=${NEXT_PUBLIC_OPIK_ENDPOINT:-https://api.opik.ai}
+      # For local Opik in Docker: use http://localhost:5173 (browser access)
+      # For Opik in same Docker network: use http://opik:5173 (internal access)
+      - NEXT_PUBLIC_OPIK_ENDPOINT=${NEXT_PUBLIC_OPIK_ENDPOINT:-http://localhost:5173}
     depends_on:
       - backend
     mem_limit: 512m
@@ -39,7 +41,13 @@ services:
     restart: unless-stopped
     networks:
       - vulnerable-lab-network
+      # Uncomment to connect to Opik's network if running separately
+      # - opik-network
 
 networks:
   vulnerable-lab-network:
     driver: bridge
+  # Uncomment to use external Opik network (if Opik is running separately)
+  # opik-network:
+  #   external: true
+  #   name: opik_default  # Adjust based on Opik's actual network name

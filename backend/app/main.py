@@ -36,7 +36,20 @@ app.add_middleware(
 OPIK_API_KEY = os.getenv("OPIK_API_KEY", "")
 OPIK_ENDPOINT = os.getenv("OPIK_ENDPOINT", "https://api.opik.ai")
 
-if OPIK_API_KEY:
+# Support both cloud (with API key) and local (without API key) Opik instances
+# For local Opik, set OPIK_ENDPOINT to your local instance (e.g., http://localhost:5173)
+# and leave OPIK_API_KEY empty or set to a dummy value
+if OPIK_ENDPOINT and OPIK_ENDPOINT != "https://api.opik.ai":
+    # Local Opik instance - may not require API key
+    configure_opik(
+        api_key=OPIK_API_KEY or "local",
+        endpoint=OPIK_ENDPOINT,
+        service_name="vulnerable-ai-lab",
+        environment="educational"
+    )
+    opik = Opik()
+elif OPIK_API_KEY:
+    # Cloud Opik instance - requires API key
     configure_opik(
         api_key=OPIK_API_KEY,
         endpoint=OPIK_ENDPOINT,
@@ -46,7 +59,7 @@ if OPIK_API_KEY:
     opik = Opik()
 else:
     opik = None
-    print("WARNING: OPIK_API_KEY not set. Observability features will be limited.")
+    print("WARNING: OPIK not configured. Set OPIK_ENDPOINT for local or OPIK_API_KEY for cloud.")
 
 # Initialize CopilotKit Runtime
 copilot_runtime = CopilotRuntime()

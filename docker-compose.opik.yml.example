@@ -1,0 +1,30 @@
+# Example: How to integrate Opik into docker-compose.yml
+#
+# Option 1: Run Opik separately and connect via external network
+#   1. Clone Opik: git clone https://github.com/comet-ml/opik.git ../opik
+#   2. Start Opik: cd ../opik && ./opik.sh
+#   3. Find Opik's network name: docker network ls | grep opik
+#   4. Add to docker-compose.yml networks section:
+#      opik-network:
+#        external: true
+#        name: opik_default  # Replace with actual network name
+#   5. Add opik-network to backend and frontend services' networks list
+#
+# Option 2: Add Opik services directly to docker-compose.yml
+#   Copy the Opik service definitions from their docker-compose.yml
+#   and add them to this file. Then update OPIK_ENDPOINT to use service name.
+#
+# Option 3: Use docker-compose include (requires Compose v2.20+)
+#   Update docker-compose.yml version to '3.9' and add:
+#   include:
+#     - path: ../opik/docker-compose.yml
+#
+# Environment Variables for Local Opik:
+#   Backend (internal Docker communication):
+#     OPIK_ENDPOINT=http://opik:5173  # or the API port Opik uses
+#   
+#   Frontend (browser access):
+#     NEXT_PUBLIC_OPIK_ENDPOINT=http://localhost:5173
+#
+#   Backend (if Opik runs on host, not in Docker):
+#     OPIK_ENDPOINT=http://host.docker.internal:5173
