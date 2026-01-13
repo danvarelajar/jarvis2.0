@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vulnerable-ai-lab-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_BASE_URL=${LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      - LLM_API_KEY=${LLM_API_KEY:-ollama}
+      - OPIK_API_KEY=${OPIK_API_KEY:-}
+      - OPIK_ENDPOINT=${OPIK_ENDPOINT:-https://api.opik.ai}
+    volumes:
+      - ./backend:/app
+      - ./backend/sandbox:/app/sandbox
+    mem_limit: 512m
+    memswap_limit: 512m
+    restart: unless-stopped
+    networks:
+      - vulnerable-lab-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vulnerable-ai-lab-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8000}
+      - NEXT_PUBLIC_OPIK_ENDPOINT=${NEXT_PUBLIC_OPIK_ENDPOINT:-https://api.opik.ai}
+    depends_on:
+      - backend
+    mem_limit: 512m
+    memswap_limit: 512m
+    restart: unless-stopped
+    networks:
+      - vulnerable-lab-network
+
+networks:
+  vulnerable-lab-network:
+    driver: bridge
