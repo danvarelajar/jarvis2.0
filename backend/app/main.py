@@ -10,8 +10,17 @@ from typing import Dict, Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from opik import Opik, configure_opik
 from pydantic import BaseModel
+
+# Try to import Opik, make it optional if not available or broken
+try:
+    from opik import Opik, configure_opik
+    OPIK_AVAILABLE = True
+except (ImportError, ModuleNotFoundError) as e:
+    Opik = None
+    configure_opik = None
+    OPIK_AVAILABLE = False
+    print(f"WARNING: Opik not available ({str(e)}). Observability features will be disabled.")
 
 # Try to import CopilotRuntime, make it optional if not available
 try:
@@ -40,34 +49,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Opik for observability
+# Initialize Opik for observability (if available)
 OPIK_API_KEY = os.getenv("OPIK_API_KEY", "")
 OPIK_ENDPOINT = os.getenv("OPIK_ENDPOINT", "https://api.opik.ai")
 
-# Support both cloud (with API key) and local (without API key) Opik instances
-# For local Opik, set OPIK_ENDPOINT to your local instance (e.g., http://localhost:5173)
-# and leave OPIK_API_KEY empty or set to a dummy value
-if OPIK_ENDPOINT and OPIK_ENDPOINT != "https://api.opik.ai":
-    # Local Opik instance - may not require API key
-    configure_opik(
-        api_key=OPIK_API_KEY or "local",
-        endpoint=OPIK_ENDPOINT,
-        service_name="vulnerable-ai-lab",
-        environment="educational"
-    )
-    opik = Opik()
-elif OPIK_API_KEY:
-    # Cloud Opik instance - requires API key
-    configure_opik(
-        api_key=OPIK_API_KEY,
-        endpoint=OPIK_ENDPOINT,
-        service_name="vulnerable-ai-lab",
-        environment="educational"
-    )
-    opik = Opik()
+if OPIK_AVAILABLE and configure_opik and Opik:
+    # Support both cloud (with API key) and local (without API key) Opik instances
+    # For local Opik, set OPIK_ENDPOINT to your local instance (e.g., http://localhost:5173)
+    # and leave OPIK_API_KEY empty or set to a dummy value
+    try:
+        if OPIK_ENDPOINT and OPIK_ENDPOINT != "https://api.opik.ai":
+            # Local Opik instance - may not require API key
+            configure_opik(
+                api_key=OPIK_API_KEY or "local",
+                endpoint=OPIK_ENDPOINT,
+                service_name="vulnerable-ai-lab",
+                environment="educational"
+            )
+            opik = Opik()
+        elif OPIK_API_KEY:
+            # Cloud Opik instance - requires API key
+            configure_opik(
+                api_key=OPIK_API_KEY,
+                endpoint=OPIK_ENDPOINT,
+                service_name="vulnerable-ai-lab",
+                environment="educational"
+            )
+            opik = Opik()
+        else:
+            opik = None
+            print("WARNING: OPIK not configured. Set OPIK_ENDPOINT for local or OPIK_API_KEY for cloud.")
+    except Exception as e:
+        opik = None
+        print(f"WARNING: Failed to initialize Opik: {str(e)}. Observability features will be disabled.")
 else:
     opik = None
-    print("WARNING: OPIK not configured. Set OPIK_ENDPOINT for local or OPIK_API_KEY for cloud.")
 
 # Initialize CopilotKit Runtime (if available)
 if COPILOTKIT_AVAILABLE:
