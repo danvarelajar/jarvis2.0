@@ -18,7 +18,9 @@ crewai==1.0.0
 crewai-tools==1.0.0
 
 # Opik for observability
-opik==0.1.0
+# Install from GitHub because PyPI version 0.1.0 is broken (missing opik.plugins module)
+# The GitHub version has the complete package
+git+https://github.com/comet-ml/opik.git@main#egg=opik
 
 # MCP (Model Context Protocol)
 # crewai 1.0.0 requires mcp>=1.16.0
