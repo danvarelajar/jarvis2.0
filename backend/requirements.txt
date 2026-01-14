@@ -11,6 +11,7 @@ python-multipart==0.0.12
 copilotkit==0.1.76
 # CopilotKit requires langchain for middleware (langchain.agents.middleware)
 langchain>=0.2.0
+langchain-core>=0.2.0
 
 # CrewAI for agent orchestration
 crewai==1.0.0
