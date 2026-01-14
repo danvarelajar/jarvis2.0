@@ -10,9 +10,17 @@ from typing import Dict, Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from copilotkit.runtime import CopilotRuntime
 from opik import Opik, configure_opik
 from pydantic import BaseModel
+
+# Try to import CopilotRuntime, make it optional if not available
+try:
+    from copilotkit.runtime import CopilotRuntime
+    COPILOTKIT_AVAILABLE = True
+except ImportError:
+    CopilotRuntime = None
+    COPILOTKIT_AVAILABLE = False
+    print("WARNING: CopilotKit Runtime not available. CopilotKit endpoints will be disabled.")
 
 from app.crew import execute_user_request
 
@@ -61,8 +69,11 @@ else:
     opik = None
     print("WARNING: OPIK not configured. Set OPIK_ENDPOINT for local or OPIK_API_KEY for cloud.")
 
-# Initialize CopilotKit Runtime
-copilot_runtime = CopilotRuntime()
+# Initialize CopilotKit Runtime (if available)
+if COPILOTKIT_AVAILABLE:
+    copilot_runtime = CopilotRuntime()
+else:
+    copilot_runtime = None
 
 # Get project root for MCP filesystem access
 PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
@@ -142,6 +153,11 @@ async def execute_agent(request: UserRequest) -> AgentResponse:
 @app.post("/api/copilotkit/chat")
 async def copilotkit_chat(request: Dict[str, Any]):
     """CopilotKit chat endpoint"""
+    if not COPILOTKIT_AVAILABLE or copilot_runtime is None:
+        raise HTTPException(
+            status_code=503,
+            detail="CopilotKit Runtime is not available. Use /api/agent/execute instead."
+        )
     # This integrates with the CopilotKit Runtime
     # The actual agent execution happens through execute_agent
     return await copilot_runtime.process_chat_request(request)
