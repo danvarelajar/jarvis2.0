@@ -16,7 +16,8 @@ crewai-tools==1.0.0
 opik==0.1.0
 
 # MCP (Model Context Protocol)
-mcp==0.9.1
+# crewai 1.0.0 requires mcp>=1.16.0
+mcp>=1.16.0
 
 # LLM client (OpenAI-compatible)
 openai==1.54.0
