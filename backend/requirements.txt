@@ -25,7 +25,10 @@ opik==0.1.0
 mcp>=1.16.0
 
 # LLM client (OpenAI-compatible)
-openai==1.54.0
+# crewai 1.0.0 requires openai>=1.13.3
+# opik 0.1.0 requires openai<2.0.0
+# instructor (dependency) requires openai>=1.70.0
+openai>=1.70.0,<2.0.0
 
 # Pydantic for data validation
 # crewai 1.0.0 requires pydantic>=2.11.9, fastapi 0.115.0 requires pydantic<3.0.0
