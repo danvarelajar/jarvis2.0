@@ -21,8 +21,17 @@ from typing import Any, Dict, List, Optional
 
 from crewai import Agent, Flow, Task
 from crewai.tools import BaseTool
-from opik import track_crewai, span
 from pydantic import BaseModel, Field
+
+# Try to import Opik, make it optional if not available or broken
+try:
+    from opik import track_crewai, span, get_current_trace_id
+    OPIK_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    track_crewai = None
+    span = None
+    get_current_trace_id = None
+    OPIK_AVAILABLE = False
 
 try:
     import sseclient
@@ -31,8 +40,13 @@ except ImportError:
     sseclient = None
 
 
-# Initialize Opik tracking for CrewAI
-track_crewai()
+# Initialize Opik tracking for CrewAI (if available)
+if OPIK_AVAILABLE and track_crewai:
+    try:
+        track_crewai()
+    except Exception:
+        # If track_crewai fails, continue without Opik
+        pass
 
 
 class CommandExecutionTool(BaseTool):
@@ -341,8 +355,15 @@ def execute_user_request(user_request: str, project_root: Path) -> Dict[str, Any
     Execute a user request through the vulnerable flow.
     Returns execution results with trace information for Opik.
     """
-    # Wrap execution in Opik span for observability
-    with span("execute_user_request", metadata={"user_request": user_request[:100]}):
+    # Wrap execution in Opik span for observability (if available)
+    if OPIK_AVAILABLE and span:
+        context_manager = span("execute_user_request", metadata={"user_request": user_request[:100]})
+    else:
+        # Create a no-op context manager if Opik is not available
+        from contextlib import nullcontext
+        context_manager = nullcontext()
+    
+    with context_manager:
         flow = create_vulnerable_flow(project_root)
         
         # Execute the flow with user input
@@ -350,12 +371,13 @@ def execute_user_request(user_request: str, project_root: Path) -> Dict[str, Any
         # CrewAI Flow.kickoff is synchronous
         result = flow.kickoff(inputs={"user_request": user_request})
         
-        # Get Opik trace information
-        try:
-            from opik import get_current_trace_id
-            trace_id = get_current_trace_id()
-        except Exception:
-            trace_id = None
+        # Get Opik trace information (if available)
+        trace_id = None
+        if OPIK_AVAILABLE and get_current_trace_id:
+            try:
+                trace_id = get_current_trace_id()
+            except Exception:
+                pass
         
         return {
             "result": str(result),
